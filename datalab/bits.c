@@ -317,7 +317,9 @@ int isLessOrEqual(int x, int y) {
 int ilog2(int x) {
   // Get the position of highest bit. 
   // The maximum return value is 32, so the ans can be represented by ans = 16 * a + 8 * b + 4 * c + 2 * d + e
-  // 
+  // The basical idea is using binary search 
+  // 1. divide into two parts ,each part 16 bits, if left part is > 0, it means is highest bit position is at least at 16 th bit. 
+  // 1. divide into two parts ,each part is 8 bits. 
   int ans = 0; 
   
   ans +=  (!!(x >> 16)) << 4;
@@ -340,10 +342,7 @@ int ilog2(int x) {
  *   Rating: 2
  */
 unsigned float_neg(unsigned uf) {
-  // Float representation: (-1)^s frac 2^K 
-  // trun f to -f 
-  // get s, turn s to ~s 
-  // get to know if it is NaN. 
+  // Consider Nan 
   int exp = (uf >> 23) & 0xff;
   int frac = uf & 0x7fffff;
   int s = (uf >> 31) & 0x1;
@@ -365,8 +364,10 @@ unsigned float_neg(unsigned uf) {
  */
 // todo implement it here 
 unsigned float_i2f(int x) {
-  // special case 
-  
+  // 1. consider special case 0x00000000 and 0x80000000
+  // 2. consider even nearest round 
+  // 3. When # of frac exceeds 23 bits, truncate the least significant part.
+  // 4. when # of frac smaller than 23 bits, shift to left. 
   int s = (x >> 31) & 0x1;
   int positive_x = x >=0 ? x : -x;
   int highest_bit_pos = -1;
@@ -395,6 +396,7 @@ unsigned float_i2f(int x) {
   frac = positive_x ^ (1 << highest_bit_pos); 
   
   if (highest_bit_pos - 23 > 0) {
+    // truncate
      int truncated_len = highest_bit_pos -23;
 
      tempfrac = (frac >> truncated_len);
@@ -431,13 +433,8 @@ unsigned float_i2f(int x) {
  *   Rating: 4
  */
 unsigned float_twice(unsigned uf) {
-  // turn f to 2 * f 
-  // compute s 
-  // compute frac
-  // compute exp 
-  // increase exp to 1 
-  // consider overflow to make it become infinity
-
+  // if normalized value , add exp by 1
+  // if denormalized, right shift to 1
   int tmp=uf;
   int sign=((uf>>31)<<31); /* 0x80000000 or 0x0 */
   int exp=uf&0x7f800000;
