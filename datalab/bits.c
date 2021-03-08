@@ -150,15 +150,9 @@ int bitAnd(int x, int y) {
  *   Rating: 2
  */
 int getByte(int x, int n) {
-
-
-
-
-
-
-
-  return 2;
-
+  int right_shift_length = n << 3; 
+  int result = x >> right_shift_length;
+  return result & 0xFF;
 }
 /* 
  * logicalShift - shift x to the right by n, using a logical shift
@@ -169,7 +163,13 @@ int getByte(int x, int n) {
  *   Rating: 3 
  */
 int logicalShift(int x, int n) {
-  return 2;
+  /* if positive, just shift to right n
+   * if negative, we should add addtional value
+  */
+  int left_shift = 32 + (~n + 1);
+  int sign = (x >> 31) & 0x1; 
+  
+  return (x >> n)  + ((sign & (!!n)) << left_shift); 
 }
 /*
  * bitCount - returns count of number of 1's in word
@@ -179,7 +179,30 @@ int logicalShift(int x, int n) {
  *   Rating: 4
  */
 int bitCount(int x) {
-  return 2;
+  /*
+   *  The basic idea is based on divide and conquer.
+   *  1. Treat each 2 bits as a whole, plus lower one bit with higher one bit. 
+   *  2. Treat each 4 bits as a whole, plus lower two bits with higher two bits. 
+   */
+  
+  int temp_mask1 = 0x55 | (0x55 << 8); 
+
+  int mask1 = temp_mask1 | (temp_mask1 << 16); 
+  int temp_mask2 = 0x33 | (0x33 << 8);
+  int maks2 = temp_mask2 | (temp_mask2 << 16); 
+
+  int temp_mask3 = 0x0f | (0x0f << 8); 
+  int mask3 = temp_mask3  | (temp_mask3 << 16);
+  int mask4 =  0xff | (0xff << 16);
+  int mask5 = 0xff | (0xff << 8); 
+
+  int ans;
+  ans  = (x & mask1) + ( (x >> 1) & mask1);
+  ans = (ans & maks2) +( (ans >> 2) & maks2); 
+  ans = (ans & mask3) +( (ans >> 4) & mask3); 
+  ans = (ans & mask4) + ((ans >> 8) & mask4);  
+  ans = (ans & mask5) + ((ans >> 16) & mask5); 
+  return ans; 
 }
 /* 
  * bang - Compute !x without using !
@@ -189,7 +212,9 @@ int bitCount(int x) {
  *   Rating: 4 
  */
 int bang(int x) {
-  return 2;
+  // either x is positive or x - 1 is positive .
+  // why we need to judge x - 1 here, because 0 is not positive , so we need to judge x - 1
+  return ~(((x >> 31) & 0x1)|((~x + 1) >> 31 & 0x1)) & 1;
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -198,7 +223,7 @@ int bang(int x) {
  *   Rating: 1
  */
 int tmin(void) {
-  return 2;
+  return 1 << 31;
 }
 /* 
  * fitsBits - return 1 if x can be represented as an 
@@ -210,7 +235,16 @@ int tmin(void) {
  *   Rating: 2
  */
 int fitsBits(int x, int n) {
-  return 2;
+  // if x is positive, 1 is only occur within n-1 bits 
+  // if x is negative, 0 is only occur within n-1 bits 
+
+  int mask = 1 << 31; 
+  int sign = (x >> 31) & 0x1;
+  int n_mins_1 = n + (~1 + 1);
+  int positiveRes = (!sign) & (!(x >> n_mins_1));
+  int negativeRes = (sign) & !(~(x>> n_mins_1)); 
+
+  return positiveRes | negativeRes;
 }
 /* 
  * divpwr2 - Compute x/(2^n), for 0 <= n <= 30
@@ -220,8 +254,17 @@ int fitsBits(int x, int n) {
  *   Max ops: 15
  *   Rating: 2
  */
+
 int divpwr2(int x, int n) {
-    return 2;
+    // if x is positive, just right shift n 
+    // if x is negative and x % 2^n != 0, which means we need to do add 1 to the result. 
+    int result = x >> n; 
+    int mask = 0x1; 
+    int is_negative = x >> 31 & mask; 
+    int not_zero = !(!n); 
+    int not_same =  !!(x ^ ( (x >> n) << n )); 
+    int addition = is_negative & not_zero & not_same;
+    return result + addition;
 }
 /* 
  * negate - return -x 
@@ -231,7 +274,7 @@ int divpwr2(int x, int n) {
  *   Rating: 2
  */
 int negate(int x) {
-  return 2;
+  return ~x + 1;
 }
 /* 
  * isPositive - return 1 if x > 0, return 0 otherwise 
@@ -241,8 +284,11 @@ int negate(int x) {
  *   Rating: 3
  */
 int isPositive(int x) {
-  return 2;
+  // it is positive only when both x and x - 1 is >=0 
+  return ((x >> 31)^0x1) & (!!x); 
 }
+
+
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
  *   Example: isLessOrEqual(4,5) = 1.
@@ -250,8 +296,16 @@ int isPositive(int x) {
  *   Max ops: 24
  *   Rating: 3
  */
+
 int isLessOrEqual(int x, int y) {
-  return 2;
+  // consider overflow of x - y, so we need to judge sign in advance. 
+  // for example, if x is negative, y is positive, we just return 1 in advance. 
+  int xsign = (x >> 31) &0x1;
+  int ysign = (y >> 31) & 0x1;
+
+  int diff_sign = ((x + ~y) >> 31) & 0x1; 
+
+  return (xsign & (!ysign)) | ((!((!xsign) & ysign)) & diff_sign );
 }
 /*
  * ilog2 - return floor(log base 2 of x), where x > 0
@@ -261,7 +315,18 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4
  */
 int ilog2(int x) {
-  return 2;
+  // Get the position of highest bit. 
+  // The maximum return value is 32, so the ans can be represented by ans = 16 * a + 8 * b + 4 * c + 2 * d + e
+  // 
+  int ans = 0; 
+  
+  ans +=  (!!(x >> 16)) << 4;
+  ans += (!! (x >> (ans + 8))) << 3;
+  ans += (!! (x >> (ans + 4))) << 2;
+  ans += (!! (x >> (ans + 2))) << 1;
+  ans += (!! (x >> (ans + 1))) << 0;
+
+  return ans;
 }
 /* 
  * float_neg - Return bit-level equivalent of expression -f for
@@ -275,7 +340,19 @@ int ilog2(int x) {
  *   Rating: 2
  */
 unsigned float_neg(unsigned uf) {
- return 2;
+  // Float representation: (-1)^s frac 2^K 
+  // trun f to -f 
+  // get s, turn s to ~s 
+  // get to know if it is NaN. 
+  int exp = (uf >> 23) & 0xff;
+  int frac = uf & 0x7fffff;
+  int s = (uf >> 31) & 0x1;
+
+  if (exp == 0xff && frac != 0) {
+    return uf;
+  }
+
+  return (1 << 31) + uf;
 }
 /* 
  * float_i2f - Return bit-level equivalent of expression (float) x
@@ -286,8 +363,61 @@ unsigned float_neg(unsigned uf) {
  *   Max ops: 30
  *   Rating: 4
  */
+// todo implement it here 
 unsigned float_i2f(int x) {
-  return 2;
+  // special case 
+  
+  int s = (x >> 31) & 0x1;
+  int positive_x = x >=0 ? x : -x;
+  int highest_bit_pos = -1;
+  int exp;
+  int frac;
+  int ans; 
+  int i = 0;
+  int round = 0;
+  int truncated;
+  int tempfrac;
+  if (x == 0) { 
+   return 0;
+  }
+  if (x == 0x80000000) {
+    return 0xcf000000;
+  }
+  for (i = 0 ; i < 31; i++ ) {
+    if (((positive_x >> i) & 0x1) == 1) {
+      highest_bit_pos = i; 
+    }
+  }
+ // printf("x is %d : highest_bit_pos is :%d\n", x, highest_bit_pos);
+  //todo how to deal with no highest biti? 
+  exp = 127 + highest_bit_pos; 
+  // compute Frac 
+  frac = positive_x ^ (1 << highest_bit_pos); 
+  
+  if (highest_bit_pos - 23 > 0) {
+     int truncated_len = highest_bit_pos -23;
+
+     tempfrac = (frac >> truncated_len);
+     truncated=  (tempfrac << truncated_len) ^ frac;
+     frac = tempfrac;
+     if (truncated > (1<< (truncated_len - 1))) {
+        round = 1;
+     } 
+     if (truncated == (1 << (truncated_len - 1)) && ((frac & 1) == 1)) {
+        // round to even 
+        round = 1;
+     }
+   //  printf("truncated is %d, frac is %d, round is %d", truncated, frac, round);
+     frac += round; 
+  } else {
+    int right_shift_len = 23 - highest_bit_pos;
+    frac = (frac << right_shift_len); 
+  }
+  
+  ans = (s << 31) + (exp << 23) + frac; 
+
+  // consider overflow, detect overflow 
+  return ans;
 }
 /* 
  * float_twice - Return bit-level equivalent of expression 2*f for
@@ -301,5 +431,33 @@ unsigned float_i2f(int x) {
  *   Rating: 4
  */
 unsigned float_twice(unsigned uf) {
-  return 2;
+  // turn f to 2 * f 
+  // compute s 
+  // compute frac
+  // compute exp 
+  // increase exp to 1 
+  // consider overflow to make it become infinity
+
+  int tmp=uf;
+  int sign=((uf>>31)<<31); /* 0x80000000 or 0x0 */
+  int exp=uf&0x7f800000;
+  int frac=uf&0x7fffff;
+  tmp=tmp&0x7fffffff; /* remove sign */
+
+
+  if ((exp  >> 23) == 0xff || (exp == 0 && frac == 0)) {
+    // nan or infinity 
+    return uf; 
+  }
+  if ( exp == 0) {
+   // denormalized value 
+    return sign + exp + (frac << 1); 
+  }
+  // exp != 0  and != 0xff, it is normalized value
+  exp += (1 << 23) ;
+  if (exp == 0xff) {
+    //infinity
+    return 0xff << 23;
+  }
+  return sign + exp + frac;
 }
