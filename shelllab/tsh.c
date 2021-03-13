@@ -321,13 +321,13 @@ void do_bgfg(char **argv)
         printf("(%s): No such %s\n", id,  "job or process");
         return;
     }
-    kill(-cur_job->pid, SIGCONT);
-   // if (cur_job->state == ST) {
-//	printf("do_bgfg, current jobs stopped, do SIGCont");
-  //      if (kill(-cur_job->pid, SIGCONT) < 0) {
-    //        perror("kill in do_bgfg");
-      //  }
-   // }
+   if (cur_job->state == ST) {
+        
+	    printf("do_bgfg, current jobs stopped, do SIGCont");
+       if (kill(-cur_job->pid, SIGCONT) < 0) {
+           perror("kill in do_bgfg");
+       }
+   }
     sigset_t mask_all, mask_prev;
  
     sigfillset(&mask_all);
