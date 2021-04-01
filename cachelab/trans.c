@@ -20,14 +20,83 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
  *     be graded. 
  */
 char transpose_submit_desc[] = "Transpose submission";
+
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
+    int i, j, ii;
+
+    int b = 4; 
+    for (i = 0; i < N; i += b) {
+        for (j = 0; j < M; j += b) {
+            for(ii = i; ii < i + b; ii++) {
+                int tmp0 = A[ii][j];
+                int tmp1 = A[ii][ j + 1];
+                int tmp2 = A[ii][ j + 2];
+                int tmp3 = A[ii][ j + 3];
+                          
+
+                B[j][ii] = tmp0;
+                B[j + 1][ii] = tmp1;
+                B[j + 2][ii] = tmp2;
+                B[j + 3][ii] = tmp3;
+              
+            }
+        }
+    }    
+}
+
+void transpose_submit2(int M, int N, int A[N][M], int B[M][N])
+{
+    int i, j, ii;
+
+    int b = 8; 
+    for (i = 0; i < N; i += b) {
+        for (j = 0; j < M; j += b) {
+            for(ii = i; ii < i + b; ii++) {
+                int tmp0 = A[ii][j];
+                int tmp1 = A[ii][ j + 1];
+                int tmp2 = A[ii][ j + 2];
+                int tmp3 = A[ii][ j + 3];
+                int tmp4 = A[ii][ j + 4];
+                int tmp5 = A[ii][ j + 5];
+                int tmp6 = A[ii][ j + 6];
+                int tmp7 = A[ii][ j + 7];
+
+                B[j][ii] = tmp0;
+                B[j + 1][ii] = tmp1;
+                B[j + 2][ii] = tmp2;
+                B[j + 3][ii] = tmp3;
+                B[j + 4][ii] = tmp4;
+                B[j + 5][ii] = tmp5;
+                B[j + 6][ii] = tmp6;
+                B[j + 7][ii] = tmp7;
+            }
+        }
+    }    
 }
 
 /* 
  * You can define additional transpose functions below. We've defined
  * a simple one below to help you get started. 
  */ 
+
+void transpose_submit1(int M, int N, int A[N][M], int B[M][N])
+{
+    int i, j, tmp, ii,  jj;
+
+    int b = 8; 
+    for (i = 0; i < N; i += b) {
+        for (j = 0; j < M; j += b) {
+            for(ii = i; ii < i + b; ii++) {
+                for (jj = j; jj < j + b; jj ++) {
+                    tmp = A[ii][jj]; 
+                    B[jj][ii] = tmp;
+                }
+            }
+
+        }
+    }    
+}
 
 /* 
  * trans - A simple baseline transpose function, not optimized for the cache.
